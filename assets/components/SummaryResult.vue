@@ -12,17 +12,20 @@
   <p v-show="summary.city">{{ summary.city }}</p>
   <p v-show="summary.about">{{ summary.about }}</p>
 
-  <div v-show="summary.education.type">
-    <h3>Образование</h3>
-    <p>Уровень: {{ educationTypes[summary.education.type] }}</p>
+  <div v-for="education in summary.educations" :key="education.id">
+    <div v-show="education.type">
+      <h3>Образование</h3>
+      <p>Уровень: {{ educationTypes[education.type] }}</p>
 
-    <div v-show="summary.education.type !== 'secondary'">
-      <p v-show="summary.education.institution">Учебное заведение: {{ summary.education.institution }}</p>
-      <p v-show="summary.education.faculty">Факультет: {{ summary.education.faculty }}</p>
-      <p v-show="summary.education.specialization">Специализация: {{ summary.education.specialization }}</p>
-      <p v-show="summary.education.graduationYear">Год окончания: {{ summary.education.graduationYear }}</p>
+      <div v-show="education.type !== 'secondary'">
+        <p v-show="education.institution">Учебное заведение: {{ education.institution }}</p>
+        <p v-show="education.faculty">Факультет: {{ education.faculty }}</p>
+        <p v-show="education.specialization">Специализация: {{ education.specialization }}</p>
+        <p v-show="education.graduationYear">Год окончания: {{ education.graduationYear }}</p>
+      </div>
     </div>
   </div>
+
 
   <h3>Профессиональные качества</h3>
   <p v-show="summary.profession">Профессия: {{ summary.profession }}</p>

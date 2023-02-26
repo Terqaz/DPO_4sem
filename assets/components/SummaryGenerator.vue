@@ -2,20 +2,22 @@
   <div class="d-flex flex-row w-100">
     <!-- Форма -->
     <div class="summary-form__wrapper container-fluid w-50 p-3">
-      <form id="summaryForm" class="summary-form flex-column mx-auto rounded-3 overflow-hidden px-2"
-            name="form">
+      <div id="summaryForm" class="summary-form flex-column mx-auto rounded-3 overflow-hidden px-2">
         <h4 class="mx-auto text-center">Заполните данные о себе</h4>
 
         <div class="summary-form__body text-dark d-flex flex-column">
+          <SummaryFormSelect label="Статус" name="status" :options="resumeStatuses" default="new"
+                             @changed="setFormValue"
+          />
           <SummaryFormInput label="Профессия" name="profession" type="text"
                             placeholder="Например, 'Программист C++'"
                             :constraints="constraints['profession']"
                             @validated="setFormValue" @invalidated="resetFormValue"
           />
-          <SummaryFormInputCity label="Город проживания" name="city" type="text"
+          <SummaryFormInputCity name="city"
                                 placeholder="Например, Москва"
                                 :constraints="constraints['city']"
-                                @city-selected="(city) => this.vkData.selectedCity = city"
+                                :vkData="vkData"
                                 @validated="(field, value) => formatCityData(value)"
                                 @invalidated="resetFormValue"
           />
@@ -54,7 +56,7 @@
                             @validated="setFormValue" @invalidated="resetFormValue"
           />
 
-          <EducationForm @changed="setEducationFormValue"/>
+          <EducationFormList :educations="formData.educations" :vkData="vkData"/>
 
           <SummaryFormInput label="Желаемая зарплата" name="desiredSalary" type="number"
                             :constraints="constraints['desiredSalary']"
@@ -71,7 +73,7 @@
                             @validated="setFormValue" @invalidated="resetFormValue"
           />
         </div>
-      </form>
+      </div>
     </div>
     <!-- Резюме -->
     <div class="summary container-fluid w-50 p-3">
@@ -81,19 +83,23 @@
 </template>
 
 <script>
-import {ERROR_MESSAGES, REGEXES} from "../constants";
+import {ERROR_MESSAGES, REGEXES, RESUME_STATUSES} from "../constants";
 import SummaryFormInput from "./SummaryFormInput.vue";
 import SummaryFormInputCity from "./SummaryFormInputCity.vue"
-import EducationForm from "./EducationForm.vue";
+import EducationFormList from "./EducationFormList.vue";
 import SummaryResult from "./SummaryResult.vue";
+import SummaryFormSelect from "./SummaryFormSelect.vue";
 
 export default {
   name: 'SummaryGenerator',
-  components: {SummaryFormInput, SummaryFormInputCity, EducationForm, SummaryResult},
+  components: {SummaryFormSelect, SummaryFormInput, SummaryFormInputCity, EducationFormList, SummaryResult},
   data() {
     return {
+      resumeStatuses: RESUME_STATUSES,
+
       // Данные для резюме
       formData: {
+        status: '',
         profession: '',
         city: '',
         avatarUrl: '',
@@ -103,19 +109,16 @@ export default {
         phone: '',
         email: '',
         birthday: '',
-        education: {
-          type: '',
-          institution: '',
-          faculty: '',
-          specialization: '',
-          graduationYear: ''
-        },
+        educations: [],
         desiredSalary: '',
         keySkills: '',
         about: '',
       },
-
+      // Для работы с API ВК
       vkData: {
+        russiaId: undefined,
+        cities: [],
+        universities: [],
         selectedCity: undefined
       },
 
@@ -193,10 +196,6 @@ export default {
   methods: {
     setFormValue(field, value) {
       this.formData[field] = value;
-    },
-
-    setEducationFormValue(field, value) {
-      this.formData.education[field] = value
     },
 
     resetFormValue(field) {

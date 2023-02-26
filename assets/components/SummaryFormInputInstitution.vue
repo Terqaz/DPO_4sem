@@ -1,16 +1,16 @@
 <template>
   <div class="mb-3">
-    <label v-bind:for="'summaryForm-' + name" class="mb-2">Город проживания</label>
+    <label v-bind:for="'summaryForm-' + name" class="mb-2">Учебное заведение</label>
     <div class="field">
       <input type="text" v-model="inputValue" v-bind:id="'summaryForm-' + name"
              class="form-control form-control-sm" v-bind:placeholder="placeholder">
-      <div v-if="help" class="form-text mt-2">{{ help }}</div>
-      <ul v-show="vkData.cities.length > 0" class="field__choices list-group">
-        <li v-for="city in vkData.cities" :key="city.id"
-            @click="selectCity(city.id)"
+      <div class="form-text mt-2">Подсказки появятся после выбора города из выпадающего списка</div>
+      <ul v-show="vkData.universities.length > 0" class="field__choices list-group">
+        <li v-for="university in vkData.universities" :key="university.id"
+            @click="selectUniversity(university.id)"
             class="list-group-item list-group-item-action"
         >
-          {{ formatCityData(city) }}
+          {{ university.title }}
         </li>
       </ul>
     </div>
@@ -27,7 +27,7 @@
 import {vkApi} from "../vkApiClient";
 
 export default {
-  name: "SummaryFormInputCity",
+  name: "SummaryFormInputInstitution",
 
   props: {
     name: {
@@ -38,20 +38,16 @@ export default {
       type: String,
       default: ''
     },
-    help: {
-      type: String,
-      default: ''
-    },
     constraints: {
       type: Object,
     },
     vkData: {
       type: Object,
       required: true
-    }
+    },
   },
 
-  emits: ['validated', 'invalidated'],
+  emits: ['university-selected', 'validated', 'invalidated'],
 
   data() {
     return {
@@ -60,9 +56,6 @@ export default {
       // Ошибки при валидации
       errors: []
     }
-  },
-  mounted() {
-    this.queryRussiaCountryId();
   },
   computed: {
     inputValue: {
@@ -78,7 +71,10 @@ export default {
         this.hasChanged = true;
 
         if (0 === this.errors.length) {
-          this.queryCitiesList(newValue);
+          if (this.vkData.selectedCity) {
+            this.queryUniversityList(newValue)
+          }
+
           this.$emit('validated', this.name, newValue);
         } else {
           this.vkData.cities = [];
@@ -89,14 +85,12 @@ export default {
   },
 
   methods: {
-    queryCitiesList(query) {
-      this.queryRussiaCountryId();
-
+    queryUniversityList(query) {
       vkApi
-          .get(vkApi.methods.database.getCities, {
+          .get(vkApi.methods.database.getUniversities, {
             country_id: this.vkData.russiaId,
-            q: query.substr(0, 15),
-            need_all: 1,
+            city_id: this.vkData.selectedCity.id,
+            q: query,
             count: 10
           }, (function (err, data) {
             if (err) {
@@ -104,54 +98,17 @@ export default {
             } else if (data.error) {
               console.error(data.error)
             } else {
-              this.vkData.cities = data.response.items;
+              this.vkData.universities = data.response.items;
             }
           }).bind(this));
     },
 
-    queryRussiaCountryId() {
-      if (this.vkData.russiaId !== undefined) {
-        return;
-      }
-
-      vkApi
-          .get(vkApi.methods.database.getCountries, {
-            code: 'RU',
-            count: 1
-          }, (function (err, data) {
-            if (err) {
-              console.error(err);
-            } else if (data.error) {
-              console.error(data.error)
-            } else {
-              this.vkData.russiaId = data.response.items[0].id;
-            }
-          }).bind(this));
-    },
-
-    formatCityData(city) {
-      let s = city.title;
-
-      let additionalData = [];
-      if (city.area) {
-        additionalData.push(city.area);
-      }
-      if (city.region) {
-        additionalData.push(city.region);
-      }
-
-      if (additionalData.length > 0) {
-        s += ' (' + additionalData.join(', ') + ')';
-      }
-      return s;
-    },
-
-    selectCity(cityId) {
-      let city = this.vkData.cities.find((city) => city.id === cityId);
-      this.value = city.title;
-      this.vkData.cities = [];
-      this.vkData.selectedCity = city;
-      this.$emit('validated', this.name, city.title);
+    selectUniversity(cityId) {
+      let university = this.vkData.universities.find((city) => city.id === cityId);
+      this.value = university.title;
+      this.vkData.universities = [];
+      this.$emit('university-selected', university);
+      this.$emit('validated', this.name, university.title);
     },
 
     /** todo вынести

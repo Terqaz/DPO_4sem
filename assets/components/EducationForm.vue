@@ -1,46 +1,55 @@
 <template>
-  <SummaryFormSelect label="Образование" name="type" :options="educationTypes"
-                     @changed="setFormValue"
-  />
-  <div v-show="formData.type && formData.type !== 'secondary'">
-    <SummaryFormField type="text" label="Учебное заведение" name="institution"
-                      :constraints="constraints['institution']"
-                      @validated="setFormValue" @invalidated="resetFormValue"
-    />
-    <SummaryFormField type="text" label="Факультет" name="faculty"
-                      :constraints="constraints['faculty']"
-                      @validated="setFormValue" @invalidated="resetFormValue"
-    />
-    <SummaryFormField type="text" label="Специализация" name="specialization"
-                      :constraints="constraints['specialization']"
-                      @validated="setFormValue" @invalidated="resetFormValue"
-    />
-    <SummaryFormField type="number" label="Год окончания" name="graduationYear"
-                      :constraints="constraints['graduationYear']"
-                      @validated="setFormValue" @invalidated="resetFormValue"
-    />
+  <div class="container-fluid d-inline-flex p-0">
+    <button class="btn btn-sm btn-outline-danger me-2 mb-auto" @click="$emit('removed')">X</button>
+
+    <div>
+      <SummaryFormSelect label="Образование" name="type" :options="educationTypes"
+                         @changed="setEducationValue"
+      />
+      <div v-show="education.type && education.type !== 'secondary'">
+        <SummaryFormInputInstitution name="institution"
+                                     :vk-data="vkData" :constraints="constraints['institution']"
+                                     @validated="setEducationValue" @invalidated="resetEducationValue"/>
+        <SummaryFormField type="text" label="Факультет" name="faculty"
+                          :constraints="constraints['faculty']"
+                          @validated="setEducationValue" @invalidated="resetEducationValue"
+        />
+        <SummaryFormField type="text" label="Специализация" name="specialization"
+                          :constraints="constraints['specialization']"
+                          @validated="setEducationValue" @invalidated="resetEducationValue"
+        />
+        <SummaryFormField type="number" label="Год окончания" name="graduationYear"
+                          :constraints="constraints['graduationYear']"
+                          @validated="setEducationValue" @invalidated="resetEducationValue"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
+import {EDUCATION_TYPES, ERROR_MESSAGES, REGEXES} from "../constants";
 import SummaryFormSelect from "./SummaryFormSelect.vue";
 import SummaryFormField from "./SummaryFormInput.vue";
-import {EDUCATION_TYPES, ERROR_MESSAGES, REGEXES} from "../constants";
+import SummaryFormInputInstitution from "./SummaryFormInputInstitution.vue";
 
 export default {
   name: "EducationForm",
-  components: {SummaryFormField, SummaryFormSelect},
-  emits: ["changed"],
+  components: {SummaryFormInputInstitution, SummaryFormField, SummaryFormSelect},
+  emits: ["removed"],
+  props: {
+    // Данные об образовании
+    education: {
+      type: Object,
+      required: true
+    },
+    // Данные, полученные из ВК
+    vkData: {
+      type: Object
+    },
+  },
   data() {
     return {
-      formData: {
-        type: '',
-        institution: '',
-        faculty: '',
-        specialization: '',
-        graduationYear: '',
-      },
-
       educationTypes: EDUCATION_TYPES,
 
       // Условия для валидации каждого поля
@@ -73,14 +82,12 @@ export default {
   },
 
   methods: {
-    setFormValue(field, value) {
-      this.formData[field] = value;
-      this.$emit('changed', field, value);
+    setEducationValue(field, value) {
+      this.education[field] = value;
     },
 
-    resetFormValue(field) {
-      this.setFormValue(field, '');
-      this.$emit('changed', field, '');
+    resetEducationValue(field) {
+      this.setEducationValue(field, '');
     },
   }
 }

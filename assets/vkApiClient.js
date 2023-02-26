@@ -7,7 +7,8 @@ export const vkApi = {
     methods: {
         database: {
             getCountries: 'database.getCountries',
-            getCities: 'database.getCities'
+            getCities: 'database.getCities',
+            getUniversities: 'database.getUniversities',
         }
     },
     get: get,

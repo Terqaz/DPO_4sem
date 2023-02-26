@@ -2,7 +2,6 @@ const APP_CONFIG = {
   vk: {
     uri: 'https://api.vk.com/method/',
     apiVersion: '',
-    appId: 0,
-    redirectUri: '',
+    token: ''
   }
 };

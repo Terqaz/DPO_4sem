@@ -6,6 +6,24 @@ export const EDUCATION_TYPES = {
     higher: 'Высшее',
 };
 
+// статусы резюме
+export const RESUME_STATUSES = {
+    new: 'Новое',
+    interviewScheduled: 'Назначено собеседование',
+    accepted: 'Принят',
+    rejected: 'Отказ',
+};
+
+// Структура образования
+export const EDUCATION_TEMPLATE = {
+    id: 0,
+    type: '',
+    institution: '',
+    faculty: '',
+    specialization: '',
+    graduationYear: ''
+};
+
 // Регулярные выражения, применяемые при валидации
 export const REGEXES = {
     isAlpha: new RegExp('^[A-ЯЁ][а-яё\-]{1,32}$', 'u'),

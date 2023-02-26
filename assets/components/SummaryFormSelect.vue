@@ -24,12 +24,15 @@ export default {
       type: Object,
       required: true
     },
+    default: {
+      type: String,
+      default: ''
+    }
   },
   emits: ["changed"],
-
   data() {
     return {
-      value: ""
+      value: this.default
     }
   },
   computed: {

@@ -18,42 +18,57 @@ export default {
   name: "SummaryFormInput",
 
   props: {
+    // Название поля
     name: {
       type: String,
       required: true,
     },
+    // Выводимое пользователю название поля
     label: {
       type: String,
       required: true,
     },
+    // Тип поля ввода
     type: {
       type: String,
       required: true,
     },
+    // Подсказка в поле ввода
     placeholder: {
       type: String,
       default: ''
     },
+    // Подсказка под полем ввода
     help: {
       type: String,
       default: ''
     },
+    // Правила валидации
     constraints: {
       type: Object,
     }
   },
 
-  emits: ['validated', 'invalidated'],
+  emits: [
+    'validated', // Значение валидировано и корректно
+    'invalidated' // Значение валидировано и некорректно
+  ],
 
   data() {
     return {
+      // Было ли однажды изменено поле
       hasChanged: false,
+      // Значение, введенное пользователем
       value: '',
+      // Выводимые ошибки при валидации
       errors: []
     }
   },
 
   computed: {
+    /**
+     * Обработка вводимого значения
+     */
     inputValue: {
       get() {
         return this.value;
