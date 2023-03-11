@@ -8,7 +8,10 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class MainController extends AbstractController
 {
-    #[Route('/', name: 'app_main')]
+    /**
+     * Отправляем все остальные запросы, которые не подошли ни под один роут, во vue-router
+     */
+    #[Route('/{path}', name: 'app_main', requirements: ['path' => '.*'])]
     public function index(): Response
     {
         return $this->render('main/index.html.twig');

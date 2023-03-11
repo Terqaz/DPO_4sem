@@ -3,7 +3,7 @@
     <label v-bind:for="'summaryForm-' + name" class="mb-2">{{ label }}</label>
     <select v-model="inputValue" v-bind:id="'summaryForm-' + name"
             class="form-control form-control-sm">
-      <option v-for="(value, option) in options" v-bind:value="option">{{ value }}</option>
+      <option v-for="(value, option) in options" :key="option" :value="option">{{ value }}</option>
     </select>
   </div>
 </template>
@@ -12,37 +12,42 @@
 export default {
   name: "SummaryFormSelect",
   props: {
+    modelValue: {
+      required: true,
+    },
+    // Выводимое пользователю название поля
     label: {
       type: String,
       required: true
     },
+    // Название поля
     name: {
       type: String,
       required: true
     },
+    // Значения для выбора
     options: {
       type: Object,
       required: true
     },
+
     default: {
       type: String,
       default: ''
     }
   },
-  emits: ["changed"],
-  data() {
-    return {
-      value: this.default
-    }
-  },
+
+  emits: [
+    "update:modelValue"
+  ],
+
   computed: {
     inputValue: {
       get() {
-        return this.value;
+        return this.modelValue;
       },
-      set(newValue) {
-        this.value = newValue;
-        this.$emit('changed', this.name, newValue);
+      set(value) {
+        this.$emit("update:modelValue", value);
       }
     }
   },

@@ -10,7 +10,7 @@
             @click="selectCity(city.id)"
             class="list-group-item list-group-item-action"
         >
-          {{ formatCityData(city) }}
+          {{ city }}
         </li>
       </ul>
     </div>
@@ -24,39 +24,49 @@
 </template>
 
 <script>
-import {vkApi} from "../vkApiClient";
+import {vkApi} from "../js/vkApiClient";
+import {validationUtils} from "../js/validationUtils";
 
 export default {
   name: "SummaryFormInputCity",
 
   props: {
+    modelValue: {
+      type: String,
+    },
+    // Название поля
     name: {
       type: String,
       required: true,
     },
+    // Подсказка в поле ввода
     placeholder: {
       type: String,
       default: ''
     },
+    // Подсказка под полем ввода
     help: {
       type: String,
       default: ''
     },
+    // Правила валидации
     constraints: {
       type: Object,
     },
+    // Для работы с VK API
     vkData: {
       type: Object,
       required: true
     }
   },
 
-  emits: ['validated', 'invalidated'],
+  emits: [
+    'update:modelValue',
+    'validated'
+  ],
 
   data() {
     return {
-      hasChanged: false,
-      value: '',
       // Ошибки при валидации
       errors: []
     }
@@ -64,31 +74,36 @@ export default {
   mounted() {
     this.queryRussiaCountryId();
   },
+  watch: {
+    modelValue(newValue, oldValue) {
+      this.validate(newValue);
+    }
+  },
   computed: {
     inputValue: {
       get() {
-        return this.value;
+        return this.modelValue;
       },
-      set(newValue) {
-        this.value = newValue;
+      set(value) {
+        this.$emit("update:modelValue", value);
 
-        if (this.hasChanged) {
-          this.errors = this.formatErrors(newValue, this.constraints);
-        }
-        this.hasChanged = true;
-
-        if (0 === this.errors.length) {
-          this.queryCitiesList(newValue);
-          this.$emit('validated', this.name, newValue);
+        if (this.validate(value)) {
+          this.queryCitiesList(value);
         } else {
           this.vkData.cities = [];
-          this.$emit('invalidated', this.name);
         }
       }
-    }
+    },
   },
 
   methods: {
+    validate(value) {
+      this.errors = validationUtils.formatErrors(value, this.constraints);
+      let isValid = 0 === this.errors.length;
+      this.$emit('validated', this.name, value, isValid);
+      return isValid
+    },
+
     queryCitiesList(query) {
       this.queryRussiaCountryId();
 
@@ -151,58 +166,8 @@ export default {
       this.value = city.title;
       this.vkData.cities = [];
       this.vkData.selectedCity = city;
-      this.$emit('validated', this.name, city.title);
+      this.$emit('validated', this.name, this.formatCityData(city), true);
     },
-
-    /** todo вынести
-     * Возвращает массив ошибок валидации
-     * Аргументы:
-     * value: string - проверяемое значение
-     * constraints: array<string, mixed>
-     * Returns: array<string> - ошибки валидации
-     */
-    formatErrors(value, constraints) {
-      let errors = [];
-
-      if (!constraints || !value && !constraints.required) {
-        return errors;
-      }
-      if (constraints.required && !value) {
-        errors.push('Обязательное поле');
-      }
-
-      if (typeof value === 'string') {
-        let lengthMessage = 'Длина - ';
-        if (constraints.minLength && value.length < constraints.minLength) {
-          lengthMessage += ' от ' + constraints.minLength;
-        }
-        if (constraints.maxLength && value.length > constraints.maxLength) {
-          lengthMessage += ' до ' + +constraints.maxLength;
-        }
-        if (lengthMessage.length > 8) {
-          lengthMessage += ' символов'
-          errors.push(lengthMessage);
-        }
-
-        if (constraints.regex && constraints.regexErrorMessage && !constraints.regex.test(value)) {
-          errors.push(constraints.regexErrorMessage);
-        }
-      } else if (typeof value === 'number') {
-        let lengthMessage = 'Число - ';
-        if (constraints.minLength && value < constraints.minLength) {
-          lengthMessage += ' от ' + constraints.minLength;
-        }
-        if (constraints.maxLength && value > constraints.maxLength) {
-          lengthMessage += ' до ' + +constraints.maxLength;
-        }
-
-        if (lengthMessage.length > 8) {
-          errors.push(lengthMessage);
-        }
-      }
-
-      return errors;
-    }
   }
 }
 </script>

@@ -14,10 +14,13 @@
 </template>
 
 <script>
+import {validationUtils} from "../js/validationUtils";
+
 export default {
   name: "SummaryFormInput",
 
   props: {
+    modelValue: {},
     // Название поля
     name: {
       type: String,
@@ -48,97 +51,38 @@ export default {
       type: Object,
     }
   },
-
   emits: [
-    'validated', // Значение валидировано и корректно
-    'invalidated' // Значение валидировано и некорректно
+    'update:modelValue',
+    'validated', // Значение валидировано
   ],
-
   data() {
     return {
-      // Было ли однажды изменено поле
-      hasChanged: false,
-      // Значение, введенное пользователем
-      value: '',
-      // Выводимые ошибки при валидации
       errors: []
     }
   },
-
+  watch: {
+    modelValue(newValue, oldValue) {
+      this.validate(newValue);
+    }
+  },
   computed: {
     /**
      * Обработка вводимого значения
      */
     inputValue: {
       get() {
-        return this.value;
+        return this.modelValue;
       },
-      set(newValue) {
-        this.value = newValue;
-
-        if (this.hasChanged) {
-          this.errors = this.formatErrors(newValue, this.constraints);
-        }
-        this.hasChanged = true;
-
-        if (0 === this.errors.length) {
-          this.$emit('validated', this.name, newValue);
-        } else {
-          this.$emit('invalidated', this.name);
-        }
+      set(value) {
+        this.$emit("update:modelValue", value);
+        this.validate(value);
       }
-    }
+    },
   },
-
   methods: {
-    /** todo вынести
-     * Возвращает массив ошибок валидации
-     * Аргументы:
-     * value: string - проверяемое значение
-     * constraints: array<string, mixed>
-     * Returns: array<string> - ошибки валидации
-     */
-    formatErrors(value, constraints) {
-      let errors = [];
-
-      if (!constraints || !value && !constraints.required) {
-        return errors;
-      }
-      if (constraints.required && !value) {
-        errors.push('Обязательное поле');
-      }
-
-      if (typeof value === 'string') {
-        let lengthMessage = 'Длина - ';
-        if (constraints.minLength && value.length < constraints.minLength) {
-          lengthMessage += ' от ' + constraints.minLength;
-        }
-        if (constraints.maxLength && value.length > constraints.maxLength) {
-          lengthMessage += ' до ' + +constraints.maxLength;
-        }
-        if (lengthMessage.length > 8) {
-          lengthMessage += ' символов'
-          errors.push(lengthMessage);
-        }
-
-        if (constraints.regex && constraints.regexErrorMessage && !constraints.regex.test(value)) {
-          errors.push(constraints.regexErrorMessage);
-        }
-      } else if (typeof value === 'number') {
-        let lengthMessage = 'Число - ';
-        if (constraints.minLength && value < constraints.minLength) {
-          lengthMessage += ' от ' + constraints.minLength;
-        }
-        if (constraints.maxLength && value > constraints.maxLength) {
-          lengthMessage += ' до ' + +constraints.maxLength;
-        }
-
-        if (lengthMessage.length > 8) {
-          errors.push(lengthMessage);
-        }
-      }
-
-      return errors;
+    validate(value) {
+      this.errors = validationUtils.formatErrors(value, this.constraints);
+      this.$emit('validated', this.name, value, 0 === this.errors.length);
     }
   }
 }

@@ -24,12 +24,16 @@
 </template>
 
 <script>
-import {vkApi} from "../vkApiClient";
+import {vkApi} from "../js/vkApiClient";
+import {validationUtils} from "../js/validationUtils";
 
 export default {
   name: "SummaryFormInputInstitution",
 
   props: {
+    modelValue: {
+      type: String,
+    },
     name: {
       type: String,
       required: true,
@@ -47,44 +51,49 @@ export default {
     },
   },
 
-  emits: ['university-selected', 'validated', 'invalidated'],
+  emits: [
+    'update:modelValue',
+    'validated'
+  ],
 
   data() {
     return {
-      hasChanged: false,
-      value: '',
       // Ошибки при валидации
       errors: []
+    }
+  },
+  watch: {
+    modelValue(newValue, oldValue) {
+      this.validate(newValue);
     }
   },
   computed: {
     inputValue: {
       get() {
-        return this.value;
+        return this.modelValue;
       },
-      set(newValue) {
-        this.value = newValue;
+      set(value) {
+        this.$emit("update:modelValue", value);
 
-        if (this.hasChanged) {
-          this.errors = this.formatErrors(newValue, this.constraints);
-        }
-        this.hasChanged = true;
-
-        if (0 === this.errors.length) {
+        if (this.validate(value)) {
           if (this.vkData.selectedCity) {
-            this.queryUniversityList(newValue)
+            this.queryUniversityList(value)
           }
-
-          this.$emit('validated', this.name, newValue);
         } else {
-          this.vkData.cities = [];
-          this.$emit('invalidated', this.name);
+          this.vkData.universities = [];
         }
       }
     }
   },
 
   methods: {
+    validate(value) {
+      this.errors = validationUtils.formatErrors(value, this.constraints);
+      let isValid = 0 === this.errors.length;
+      this.$emit('validated', this.name, value, isValid);
+      return isValid
+    },
+
     queryUniversityList(query) {
       vkApi
           .get(vkApi.methods.database.getUniversities, {
@@ -110,56 +119,6 @@ export default {
       this.$emit('university-selected', university);
       this.$emit('validated', this.name, university.title);
     },
-
-    /** todo вынести
-     * Возвращает массив ошибок валидации
-     * Аргументы:
-     * value: string - проверяемое значение
-     * constraints: array<string, mixed>
-     * Returns: array<string> - ошибки валидации
-     */
-    formatErrors(value, constraints) {
-      let errors = [];
-
-      if (!constraints || !value && !constraints.required) {
-        return errors;
-      }
-      if (constraints.required && !value) {
-        errors.push('Обязательное поле');
-      }
-
-      if (typeof value === 'string') {
-        let lengthMessage = 'Длина - ';
-        if (constraints.minLength && value.length < constraints.minLength) {
-          lengthMessage += ' от ' + constraints.minLength;
-        }
-        if (constraints.maxLength && value.length > constraints.maxLength) {
-          lengthMessage += ' до ' + +constraints.maxLength;
-        }
-        if (lengthMessage.length > 8) {
-          lengthMessage += ' символов'
-          errors.push(lengthMessage);
-        }
-
-        if (constraints.regex && constraints.regexErrorMessage && !constraints.regex.test(value)) {
-          errors.push(constraints.regexErrorMessage);
-        }
-      } else if (typeof value === 'number') {
-        let lengthMessage = 'Число - ';
-        if (constraints.minLength && value < constraints.minLength) {
-          lengthMessage += ' от ' + constraints.minLength;
-        }
-        if (constraints.maxLength && value > constraints.maxLength) {
-          lengthMessage += ' до ' + +constraints.maxLength;
-        }
-
-        if (lengthMessage.length > 8) {
-          errors.push(lengthMessage);
-        }
-      }
-
-      return errors;
-    }
   }
 }
 </script>

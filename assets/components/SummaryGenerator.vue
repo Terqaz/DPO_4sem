@@ -1,119 +1,199 @@
 <template>
-  <div class="d-flex flex-row w-100">
+  <p v-if="errors.loading" class="text-danger">
+    Произошла ошибка при загрузке страницы. Не волнуйтесь, вскоре сервис возобновит свою работу :)
+  </p>
+
+  <div v-else class="d-flex flex-row">
     <!-- Форма -->
-    <div class="summary-form__wrapper container-fluid w-50 p-3">
+    <div class="summary-form__wrapper w-50 p-3">
       <div id="summaryForm" class="summary-form flex-column mx-auto rounded-3 overflow-hidden px-2">
         <h4 class="mx-auto text-center">Заполните данные о себе</h4>
 
         <div class="summary-form__body text-dark d-flex flex-column">
-          <SummaryFormSelect label="Статус" name="status" :options="resumeStatuses" default="new"
-                             @changed="setFormValue"
+          <SummaryFormSelect v-model="formData.status"
+                             label="Статус" name="status" :options="summaryStatuses"
           />
-          <SummaryFormInput label="Профессия" name="profession" type="text"
+          <SummaryFormInput v-model="formData.profession"
+                            label="Профессия" name="profession" type="text"
                             placeholder="Например, 'Программист C++'"
                             :constraints="constraints['profession']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInputCity name="city"
+          <SummaryFormInputCity v-model="formData.city"
+                                name="city"
                                 placeholder="Например, Москва"
                                 :constraints="constraints['city']"
                                 :vkData="vkData"
-                                @validated="(field, value) => formatCityData(value)"
-                                @invalidated="resetFormValue"
+                                @validated="setValidatedValue"
           />
-          <SummaryFormInput label="Ссылка на фото" name="avatarUrl" type="text"
+          <SummaryFormInput v-model="formData.avatarUrl"
+                            label="Ссылка на фото" name="avatarUrl" type="text"
                             placeholder="https://example.site"
                             :constraints="constraints['avatarUrl']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInput label="Фамилия" name="lastName" type="text"
+          <SummaryFormInput v-model="formData.lastName"
+                            label="Фамилия" name="lastName" type="text"
                             placeholder="Иванов"
                             :constraints="constraints['lastName']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInput label="Имя" name="firstName" type="text"
+          <SummaryFormInput v-model="formData.firstName"
+                            label="Имя" name="firstName" type="text"
                             placeholder="Иван"
                             :constraints="constraints['firstName']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInput label="Отчество" name="patronymic" type="text"
+          <SummaryFormInput v-model="formData.patronymic"
+                            label="Отчество" name="patronymic" type="text"
                             placeholder="Иванович"
                             :constraints="constraints['patronymic']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInput label="Телефон" name="phone" type="text"
+          <SummaryFormInput v-model="formData.phone"
+                            label="Телефон" name="phone" type="text"
                             placeholder="002030 или 9001002030"
                             help="Сокращенный (6 цифр) или полный без кода страны (10 цифр)"
                             :constraints="constraints['phone']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInput label="Email" name="email" type="text"
+          <SummaryFormInput v-model="formData.email"
+                            label="Email" name="email" type="text"
                             placeholder="example@some.site"
                             :constraints="constraints['email']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInput label="Дата рождения" name="birthday" type="date"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+          <SummaryFormInput v-model="formData.birthday"
+                            label="Дата рождения" name="birthday" type="date"
+                            :constraints="constraints['birthday']"
+                            @validated="setValidatedValue"
           />
 
-          <EducationFormList :educations="formData.educations" :vkData="vkData"/>
+          <EducationFormList :modelValue="formData.educations"
+                             @update:modelValue="(value) => setValidatedValue('educations', value)"
+                             :vkData="vkData"/>
 
-          <SummaryFormInput label="Желаемая зарплата" name="desiredSalary" type="number"
+          <SummaryFormInput v-model="formData.desiredSalary"
+                            label="Желаемая зарплата" name="desiredSalary" type="number"
                             :constraints="constraints['desiredSalary']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInput label="Ключевые навыки" name="keySkills" type="text"
+          <SummaryFormInput v-model="formData.keySkills"
+                            label="Ключевые навыки" name="keySkills" type="text"
                             placeholder="Symfony, Vue.js, ..."
                             :constraints="constraints['keySkills']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
-          <SummaryFormInput label="О себе" name="about" type="text"
+          <SummaryFormInput v-model="formData.about"
+                            label="О себе" name="about" type="text"
                             placeholder="Попытайтесь описать себя"
                             :constraints="constraints['about']"
-                            @validated="setFormValue" @invalidated="resetFormValue"
+                            @validated="setValidatedValue"
           />
         </div>
+        <button class="btn btn-primary" @click="save">Применить</button>
+
+
+        <p v-if="errors.beforeSaving" class="text-danger">
+          {{ errors.beforeSaving }}
+        </p>
+        <p v-else-if="errors.saving" class="text-danger">
+          Не удалось сохранить резюме. Не волнуйтесь, вскоре сервис
+          возобновит свою работу :)
+        </p>
+        <p v-else-if="hasSaved">
+          Успешно сохранено
+        </p>
       </div>
     </div>
     <!-- Резюме -->
     <div class="summary container-fluid w-50 p-3">
-      <SummaryResult :summary="formData"/>
+      <SummaryResult :summary="validatedValues"/>
     </div>
   </div>
 </template>
 
 <script>
-import {ERROR_MESSAGES, REGEXES, RESUME_STATUSES} from "../constants";
+import {SUMMARY_STATUSES, SUMMARY_TEMPLATE} from "../js/constants";
 import SummaryFormInput from "./SummaryFormInput.vue";
 import SummaryFormInputCity from "./SummaryFormInputCity.vue"
 import EducationFormList from "./EducationFormList.vue";
 import SummaryResult from "./SummaryResult.vue";
 import SummaryFormSelect from "./SummaryFormSelect.vue";
+import {summaryApi} from "../js/summaryApiClient";
+import {SUMMARY_CONSTRAINTS, validationUtils} from "../js/validationUtils";
 
 export default {
   name: 'SummaryGenerator',
   components: {SummaryFormSelect, SummaryFormInput, SummaryFormInputCity, EducationFormList, SummaryResult},
+  created() {
+    /**
+     * Обработать ответ
+     * @param response
+     * @returns обработанный ответ
+     */
+    const processResponse = (response) => {
+      response.birthday = response.birthday.substring(0, 10);
+      return response;
+    }
+
+    /**
+     * Загрузить резюме изначально и при изменнении роута
+     * @param newName - новое имя роута
+     * @param oldName - старое имя роута
+     */
+    const loadSummary = (newName, oldName = '') => {
+      // Подгружаем данные существующего резюме при редактировании
+      if (newName === 'summary.add') {
+        this.formData = structuredClone(SUMMARY_TEMPLATE);
+        this.validatedValues = {};
+        this.hasSaved = false;
+      } else if (newName === 'summary.edit') {
+        const id = parseInt(this.$route.params.id);
+
+        summaryApi
+            .getById(id)
+            .then((response) => {
+              if (response.status === 200) {
+                const data = processResponse(response.data);
+                this.formData = data;
+                this.validatedValues = structuredClone(data);
+              } else {
+                this.errors.loading = response.data.error;
+                console.log(response);
+              }
+            });
+      }
+    };
+
+    loadSummary(this.$route.name);
+
+    this.$watch(
+        () => this.$route.name,
+        loadSummary
+    )
+  },
   data() {
     return {
-      resumeStatuses: RESUME_STATUSES,
+      summaryStatuses: SUMMARY_STATUSES,
 
       // Данные для резюме
-      formData: {
-        status: '',
-        profession: '',
-        city: '',
-        avatarUrl: '',
-        lastName: '',
-        firstName: '',
-        patronymic: '',
-        phone: '',
-        email: '',
-        birthday: '',
-        educations: [],
-        desiredSalary: '',
-        keySkills: '',
-        about: '',
+      formData: structuredClone(SUMMARY_TEMPLATE),
+
+      // Условия для валидации каждого поля
+      constraints: SUMMARY_CONSTRAINTS,
+
+      // Валидированные значения для отрисовки и отправки резюме по API
+      validatedValues: {},
+      // Ошибки в процессе работы с API
+      errors: {
+        loading: '',
+        saving: '',
+        beforeSaving: ''
       },
+      // Успешно ли сохранилось резюме
+      hasSaved: false,
+
       // Для работы с API ВК
       vkData: {
         russiaId: undefined,
@@ -121,104 +201,55 @@ export default {
         universities: [],
         selectedCity: undefined
       },
-
-      // Условия для валидации каждого поля
-      constraints: {
-        profession: {
-          required: true,
-          minLength: 3,
-          maxLength: 200
-        },
-        city: {
-          required: true,
-          minLength: 2,
-          regex: REGEXES.city,
-          regexErrorMessage: ERROR_MESSAGES.city
-        },
-        avatarUrl: {
-          required: false,
-          regex: REGEXES.imgUrl,
-          regexErrorMessage: ERROR_MESSAGES.url
-        },
-        lastName: {
-          required: true,
-          minLength: 2,
-          maxLength: 64,
-          regex: REGEXES.isAlpha,
-          regexErrorMessage: ERROR_MESSAGES.isAlpha
-        },
-        firstName: {
-          required: true,
-          minLength: 2,
-          maxLength: 64,
-          regex: REGEXES.isAlpha,
-          regexErrorMessage: ERROR_MESSAGES.isAlpha
-        },
-        patronymic: {
-          required: false,
-          minLength: 4,
-          maxLength: 64,
-          regex: REGEXES.isAlpha,
-          regexErrorMessage: ERROR_MESSAGES.isAlpha
-        },
-        phone: {
-          required: true,
-          minLength: 6,
-          maxLength: 10,
-          regex: REGEXES.isDigit,
-          regexErrorMessage: ERROR_MESSAGES.isDigit
-        },
-        email: {
-          required: false,
-          minLength: 5,
-          maxLength: 128,
-          regex: REGEXES.email,
-          regexErrorMessage: ERROR_MESSAGES.email
-        },
-        birthday: {
-          required: true,
-        },
-        desiredSalary: {
-          required: false,
-        },
-        keySkills: {
-          required: false,
-          maxLength: 2048,
-        },
-        about: {
-          required: false,
-          minLength: 32,
-          maxLength: 2048,
-        },
-      },
     };
   },
+
   methods: {
-    setFormValue(field, value) {
-      this.formData[field] = value;
+    /**
+     * Обновить валидное значение поля
+     * @param field - имя поля
+     * @param value - значение
+     * @param isValid - валидное ли значение
+     */
+    setValidatedValue(field, value, isValid = true) {
+      this.validatedValues[field] = isValid ? value : '';
+      this.errors.beforeSaving = '';
     },
 
-    resetFormValue(field) {
-      this.setFormValue(field, '');
-    },
+    /**
+     * Сохранить резюме по API
+     */
+    save() {
+      this.validatedValues.status = this.formData.status;
 
-    formatCityData(cityTitle) {
-      let city = this.vkData.selectedCity;
-      if (!city) {
-        // Если получен не из API ВК
-        this.formData.city = 'г. ' + cityTitle;
-      } else {
-        let cityData = [];
+      if (!validationUtils.isValuesValidated(this.constraints, this.validatedValues)) {
+        this.errors.beforeSaving = 'Пожалуйста, проверьте корректность заполненных данных';
+        return;
+      }
 
-        if (city.region) {
-          cityData.push(city.region);
-        }
-        if (city.area) {
-          cityData.push(city.area);
-        }
-        cityData.push('г. ' + city.title);
-
-        this.formData.city = cityData.join(', ');
+      // Выполняем запрос в зависимости от роута
+      if (this.$route.name === "summary.add") {
+        summaryApi
+            .add(this.validatedValues)
+            .then((response) => {
+              if (response.status === 200) {
+                this.hasSaved = true;
+              } else {
+                this.errors.saving = response.data.error;
+                console.log(response);
+              }
+            });
+      } else if (this.$route.name === "summary.edit") {
+        summaryApi
+            .edit(parseInt(this.$route.params.id), this.validatedValues)
+            .then((response) => {
+              if (response.status === 200) {
+                this.hasSaved = true;
+              } else {
+                this.errors.saving = response.data.error;
+                console.log(response);
+              }
+            });
       }
     }
   }

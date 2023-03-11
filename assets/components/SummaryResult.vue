@@ -34,12 +34,12 @@
   <p v-show="summary.keySkills">Ключевые навыки: {{ summary.keySkills }}</p>
 
   <h3 v-show="summary.phone || summary.email">Контакты</h3>
-  <p v-show="summary.phone">Телефон: {{ formattedPhone }}</p>
+  <p v-show="summary.phone">Телефон: {{ formatPhone(summary.phone) }}</p>
   <p v-show="summary.email">Email: {{ summary.email }}</p>
 </template>
 
 <script>
-import {EDUCATION_TYPES} from "../constants";
+import {EDUCATION_TYPES} from "../js/constants";
 
 export default {
   name: "SummaryResult",
@@ -67,19 +67,20 @@ export default {
       }
       return fullName;
     },
-
+  },
+  methods: {
     /**
      * Добавить к номеру телефона код страны, если его длина равна 10
+     * phone - телефон
      * Returns: string - номер телефона
      */
-    formattedPhone() {
-      if (this.summary.phone.length === 10) {
-        return '+7' + this.summary.phone;
+    formatPhone(phone) {
+      if (phone && phone.length === 10) {
+        return '+7' + phone;
       }
-      return this.summary.phone;
+      return phone;
     }
-  },
-  methods: {}
+  }
 }
 </script>
 

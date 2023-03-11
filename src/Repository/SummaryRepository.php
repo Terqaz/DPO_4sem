@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Education;
 use App\Entity\Summary;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -39,28 +40,48 @@ class SummaryRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
-//     * @return Summary[] Returns an array of Summary objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('s')
-//            ->andWhere('s.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('s.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * Обновить резюме в БД
+     * @param Education $education - старое резюме, проксированное Doctrine
+     * @param Education $newEducation - новое резюме
+     * @param bool $flush - обновить ли состояние БД
+     * @return void
+     * @throws \Doctrine\Persistence\Mapping\MappingException
+     * @throws \ReflectionException
+     */
+    public function update(Summary $summary, Summary $newSummary, bool $flush = false): void
+    {
+        $metadata = $this->getEntityManager()->getMetadataFactory()->getMetadataFor($this->getClassName());
 
-//    public function findOneBySomeField($value): ?Summary
-//    {
-//        return $this->createQueryBuilder('s')
-//            ->andWhere('s.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        $fieldNames = $metadata->getFieldNames();
+        unset($fieldNames[0]);
+
+        foreach ($fieldNames as $field) {
+            $field = ucfirst($field);
+            $setter = 'set' . $field;
+            $getter = 'get' . $field;
+
+            $summary->$setter($newSummary->$getter());
+        }
+
+        foreach ($summary->getEducations() as $education) {
+            $summary->removeEducation($education);
+        }
+
+        foreach ($newSummary->getEducations() as $newEducation) {
+            $educationRepository = $this->getEntityManager()->getRepository(Education::class);
+
+            $education = $educationRepository->findOneBy(['id' => $newEducation->getId()]);
+            if ($education !== null) {
+                $educationRepository->update($education, $newEducation);
+            } else {
+                $summary->addEducation($newEducation);
+                $this->getEntityManager()->persist($newEducation);
+            }
+        }
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
 }

@@ -1,7 +1,7 @@
-import {APP_CONFIG} from "./config.js";
+import {APP_CONFIG} from "../config.js";
 import jsonp from "jsonp";
 
-const VK = APP_CONFIG.vk.uri;
+const VK = APP_CONFIG.vk.connectUri + '/';
 
 export const vkApi = {
     methods: {

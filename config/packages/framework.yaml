@@ -17,6 +17,21 @@ framework:
     php_errors:
         log: true
 
+    # todo
+#    serializer:
+#        normalization_context:
+#            format_key: 'd:m:Y'
+#        denormalization_context:
+#            format_key: 'd:m:Y'
+
+#    serializer:
+#        normalizer:
+#            default_context:
+#                format_key: 'd:m:Y'
+#        denormalizer:
+#            default_context:
+#                format_key: 'd:m:Y'
+
 when@test:
     framework:
         test: true

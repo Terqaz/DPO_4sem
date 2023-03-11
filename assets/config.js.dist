@@ -1,7 +1,7 @@
 const APP_CONFIG = {
-  vk: {
-    uri: 'https://api.vk.com/method/',
-    apiVersion: '',
-    token: ''
-  }
+    vk: {
+        connectUri: 'https://api.vk.com/method/',
+        apiVersion: '',
+        token: ''
+    }
 };
